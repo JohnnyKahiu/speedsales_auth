@@ -145,8 +145,6 @@ func main() {
 		err = initTables()
 	}
 
-	initTables()
-
 	address := os.Getenv("LISTEN_ADDRESS")
 	if address == "*" {
 		address = "0.0.0.0"
