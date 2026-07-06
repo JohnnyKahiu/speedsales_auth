@@ -25,8 +25,7 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 
 	// Unmarshal into an args map
 	var args map[string]string
-	json.Unmarshal(b, &args)
-	// if error return user not exists
+	err = json.Unmarshal(b, &args)
 	if err != nil {
 		respMap["response"] = "error"
 		respMap["message"] = "failed to parse request params"
@@ -39,6 +38,7 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 	// compare argon2 harshed password
 	match, reset, err := user.ComparePassword(args["password"])
 	if !match || err != nil {
+		log.Println("error. failed to compare password    err =", err)
 		respMap["response"] = "error" // return success if no error and match
 		respMap["message"] = "wrong username or password"
 		return respMap
@@ -48,6 +48,7 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 	fmt.Println("accept_payment =", user.AcceptPayment)
 	fmt.Println("make_sales =", user.MakeSales)
 	fmt.Println("till_num =", user.TillNum)
+	fmt.Println("audit_stock =", user.AuditStock)
 
 	privateKeyStr, err := os.ReadFile("private_key.pem")
 	if err != nil {
@@ -59,6 +60,7 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 
 	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyStr)
 	if err != nil {
+		log.Println("error parsing private key    err =", err)
 		respMap["response"] = "error"
 		respMap["message"] = "could not parse private key"
 		return respMap

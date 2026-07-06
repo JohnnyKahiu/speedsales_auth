@@ -93,6 +93,8 @@ type Login struct {
 	GrantCreateStock  bool `json:"grant_create_stock" name:"grant_create_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 	LinkStock         bool `json:"link_stock" name:"link_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 	CompleteStockTake bool `json:"complete_stock_take" name:"complete_stock_take" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	AuditStock        bool `json:"audit_stock" type:"field" sql:"BOOL NOT NULL 'false'"`
+	GrantAuditStock   bool `json:"grant_audit_stock" type:"field" sql:"BOOL NOT NULL 'false'"`
 
 	Accounts            bool `json:"accounts" name:"accounts" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 	GrantAccounts       bool `json:"grant_accounts" name:"grant_accounts" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`

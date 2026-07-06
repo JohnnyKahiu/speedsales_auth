@@ -33,6 +33,30 @@ func UserPOSTRoutes(w http.ResponseWriter, r *http.Request) map[string]interface
 		respMap["message"] = "unauthorized"
 		return respMap
 	}
+
+	vars := mux.Vars(r)
+	m := vars["module"]
+
+	// profile is a self-service route — no CreateUsers permission required
+	if m == "profile" {
+		var appearance users.Appearance
+		b, _ := io.ReadAll(r.Body)
+		if err := json.Unmarshal(b, &appearance); err != nil {
+			respMap["response"] = "error"
+			respMap["message"] = "invalid body"
+			return respMap
+		}
+		profile := users.Profile{Appearance: appearance}
+		if err := users.UpdateProfile(details.Username, profile); err != nil {
+			log.Println("error updating profile   err =", err)
+			respMap["response"] = "error"
+			respMap["message"] = "failed to update profile"
+			return respMap
+		}
+		respMap["response"] = "success"
+		return respMap
+	}
+
 	if !details.CreateUsers {
 		respMap["response"] = "error"
 		respMap["message"] = "unauthorized"
@@ -42,8 +66,6 @@ func UserPOSTRoutes(w http.ResponseWriter, r *http.Request) map[string]interface
 	fmt.Println("user_post_routes ")
 	fmt.Println("Create_Users =", details.CreateUsers)
 
-	vars := mux.Vars(r)
-	m := vars["module"]
 	switch m {
 	case "create":
 		fmt.Println("\t create user")
@@ -78,6 +100,7 @@ func UserPOSTRoutes(w http.ResponseWriter, r *http.Request) map[string]interface
 		json.Unmarshal(b, &args)
 
 		fmt.Println("updating username =", string(b))
+		// os.Exit(0)
 
 		err := users.UpdateUser(details, args)
 		if err != nil {
@@ -89,6 +112,110 @@ func UserPOSTRoutes(w http.ResponseWriter, r *http.Request) map[string]interface
 		}
 
 		respMap["response"] = "success"
+		return respMap
+
+	}
+
+	respMap["response"] = "success"
+	return respMap
+}
+
+func UserGETRoutes(w http.ResponseWriter, r *http.Request) map[string]interface{} {
+	respMap := make(map[string]interface{})
+
+	token := r.Header.Get("token")
+	fmt.Println("token =", token)
+
+	details, authentic := users.ValidateToken(r.Context(), token)
+	if !authentic {
+		log.Println("token not authentic")
+		respMap["response"] = "error"
+		respMap["message"] = "unauthorized"
+		return respMap
+	}
+
+	fmt.Println("\t users_get_routes ")
+	fmt.Println("\t Create_Users =", details.CreateUsers)
+
+	vars := mux.Vars(r)
+	m := vars["module"]
+	fmt.Println("\t module =", m)
+	switch m {
+	case "all":
+		if !details.CreateUsers {
+			respMap["response"] = "error"
+			respMap["message"] = "unauthorized"
+			return respMap
+		}
+
+		fmt.Println("\t fetching all user")
+		var args users.Users
+		b, _ := io.ReadAll(r.Body)
+		json.Unmarshal(b, &args)
+
+		vals, err := users.FetchAllActiveUsers(details.Branch)
+		if err != nil {
+			respMap["response"] = "error"
+			respMap["message"] = "failed to create user"
+
+			log.Println("error failed to create user with     error =", err)
+			return respMap
+		}
+
+		respMap["response"] = "success"
+		respMap["values"] = vals
+		return respMap
+
+	case "fetch":
+		if !details.CreateUsers {
+			respMap["response"] = "error"
+			respMap["message"] = "unauthorized"
+			return respMap
+		}
+
+		key := r.URL.Query().Get("username")
+		fmt.Println("username =", key)
+
+		user := users.Users{Username: key}
+
+		err := user.Fetch()
+		if err != nil {
+			log.Println("error failed to run UpdateUser() with \t err =", err.Error())
+			respMap["response"] = "error"
+			respMap["message"] = "failed to update user"
+
+			return respMap
+		}
+
+		respMap["response"] = "success"
+		respMap["values"] = user
+		return respMap
+
+	case "cash_approvers":
+		vals, err := users.FetchCashApprover(details.Branch, details.Username)
+		if err != nil {
+			respMap["response"] = "error"
+			respMap["message"] = "failed to get approvers"
+			respMap["trace"] = err
+			return respMap
+		}
+
+		respMap["response"] = "success"
+		respMap["values"] = vals
+		return respMap
+
+	case "sales_approvers":
+		vals, err := users.FetchSalesApprover(details.Branch, details.Username)
+		if err != nil {
+			respMap["response"] = "error"
+			respMap["message"] = "failed to get approvers"
+			respMap["trace"] = err
+			return respMap
+		}
+
+		fmt.Println("sales_approvers = ", vals)
+		respMap["response"] = "success"
+		respMap["values"] = vals
 		return respMap
 
 	}

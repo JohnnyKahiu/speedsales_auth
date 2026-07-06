@@ -7,6 +7,16 @@ import (
 	"github.com/JohnnyKahiu/speedsales_login/pkg/database"
 )
 
+// Appearance holds UI appearance preferences for a user
+type Appearance struct {
+	Theme string `json:"theme"` // "dark" | "light"
+}
+
+// Profile holds per-user profile data stored as JSONB
+type Profile struct {
+	Appearance Appearance `json:"appearance"`
+}
+
 // Users structure of user record
 type Users struct {
 	table              string `name:"users" type:"table"`
@@ -97,6 +107,8 @@ type Users struct {
 	GrantCreateStock  bool `json:"grant_create_stock" name:"grant_create_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 	LinkStock         bool `json:"link_stock" name:"link_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 	CompleteStockTake bool `json:"complete_stock_take" name:"complete_stock_take" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	AuditStock        bool `json:"audit_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	GrantAuditStock   bool `json:"grant_audit_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 
 	Accounts            bool `json:"accounts" name:"accounts" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 	GrantAccounts       bool `json:"grant_accounts" name:"grant_accounts" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
@@ -122,6 +134,7 @@ type Users struct {
 	Token     string    `json:"token" name:"token" type:"field" sql:"VARCHAR(150)"`
 	TokenDate time.Time `json:"token_date" name:"token_date" type:"field" sql:"TIMESTAMP"`
 	Reset     bool      `json:"reset" name:"reset" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	Profile   Profile   `json:"profile" name:"profile" type:"field" sql:"JSONB NOT NULL DEFAULT '{}'"`
 
 	Passcode   string   `json:"passcode"`
 	SessionIDs []string `name:"session_ids" `
@@ -161,7 +174,10 @@ func createDefaultUser() error {
 	user.GrantAmmendInvoice = true
 	user.CreateStock = true
 	user.GrantCreateStock = true
+	user.GrantAuditStock = true
 	user.LinkStock = true
+	user.PriceChange = true
+	user.GrantPriceChange = true
 	user.CompleteStockTake = true
 	user.GrantAccounts = true
 	user.GrantAproveAccounts = true

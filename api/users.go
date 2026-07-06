@@ -39,3 +39,17 @@ func ResetUserRoutes(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(jResp)
 }
+
+func UserGETRoutes(w http.ResponseWriter, r *http.Request) {
+	respMap := user.UserGETRoutes(w, r)
+
+	EnableCors(&w)
+	jResp, err := json.Marshal(respMap)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"response": "json error"}`))
+		return
+	}
+
+	w.Write(jResp)
+}

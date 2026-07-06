@@ -32,7 +32,7 @@ func (s *TillServer) UpdateTill(ctx context.Context, req *pb.UpdateTillRequest) 
 		}, err
 	}
 
-	log.Println("grpc: AuthServer.FetchUser(): fetched user")
+	log.Printf("grpc: AuthServer.UpdateTill(): updated till for user = %v & till_num = %v  \n", req.Username, req.TillNum)
 	return &pb.UpdateTillResponse{
 		Success:  true,
 		Message:  "till updated to user successfully",

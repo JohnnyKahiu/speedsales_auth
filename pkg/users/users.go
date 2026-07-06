@@ -72,8 +72,8 @@ func (args *Users) CreateUser(password string) error {
 				laybyes, approve_credit_sales, grant_laybyes, grant_approve_credit_sales,
 				ledger, recon_ledger, create_scard, 
 				accounts, grant_accounts, aprove_accounts, grant_aprove_accounts, 
-				create_users, delete_users, create_stock,
-				access_sales_reports, stk_location, reset, password)
+				create_users, delete_users, create_stock, audit_stock, grant_audit_stock,
+				access_sales_reports, stk_location, reset, password, grant_create_users
 			VALUES($1, $2, $3, $4, $5, $6, $7, 
 					$8, $9, $10, $11, 
 					$12, $13, $14, $15, 
@@ -86,7 +86,7 @@ func (args *Users) CreateUser(password string) error {
 					$39, $40, $41, 
 					$42, $43, $44, 
 					$45, $46, $47, 
-					$48, $49, $50, $51 )`
+					$48, $49, $50, $51, $52, $53, $54 )`
 
 	// fmt.Println(sql)
 	_, err := database.PgPool.Exec(ctx, sql, args.FirstName, args.LastName, args.Telephone, args.Email, args.Username, args.Branch, args.CompanyID, args.UserClass, args.PosSettings,
@@ -99,12 +99,74 @@ func (args *Users) CreateUser(password string) error {
 		args.Laybyes, args.ApproveCreditSales, args.GrantLaybyes, args.GrantApproveCreditSales,
 		args.Ledger, args.ReconLedger, args.CreateScard,
 		args.Accounts, args.GrantAccounts, args.AproveAccounts, args.GrantAproveAccounts,
-		args.CreateUsers, args.DeleteUsers, args.CreateStock,
-		args.AccessSalesReports, args.StkLocation, args.Reset, password)
+		args.CreateUsers, args.DeleteUsers, args.CreateStock, args.AuditStock, args.GrantAuditStock,
+		args.AccessSalesReports, args.StkLocation, args.Reset, password, args.GrantCreateUsers)
 
 	if err != nil {
 		log.Println("\n Error creating user ", err)
 		return err
+	}
+
+	return nil
+}
+
+// Fetches user details
+func (user *Users) Fetch() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	sql := `SELECT first_name, last_name, 
+				username, coalesce(password, '123'), branch, coalesce(company_id, 0), coalesce(user_class, 'user'), pos_settings, 
+				coalesce(post_dispatch, false), coalesce(approve_dispatch, false), coalesce(grant_post_dispatch, false), coalesce(grant_approve_dispatch, false), 
+				coalesce(post_receive, false), coalesce(approve_receive, false), coalesce(grant_post_receive, false), coalesce(grant_approve_receive, false),
+				coalesce(post_orders, false), coalesce(approve_orders, false) , coalesce(grant_post_orders, false), coalesce(grant_approve_orders, false) ,
+				produce, grant_produce, 
+				coalesce(make_sales, false), coalesce(approve_sales, false), coalesce(accept_payment, false), coalesce(grant_make_Sales, false), coalesce(grant_approve_sales, false), coalesce(grant_accept_payment, false),
+				coalesce(sales_returns, false),  coalesce(approve_sales_returns, false), coalesce(grant_sales_returns, false), coalesce(grant_approve_sales_returns, false),
+				coalesce(grant_cash_rollups, false), coalesce(cash_rollups, false), coalesce(approve_cash_rollups, false), coalesce(grant_approve_cash_rollups, false),
+				coalesce(laybyes, false), coalesce(approve_credit_sales, false), coalesce(grant_laybyes, false), coalesce(grant_approve_credit_sales, false),
+				coalesce(ledger, false), coalesce(recon_ledger, false), coalesce(access_sales_reports, false),
+				coalesce(activate_mpesa, false), coalesce(grant_activate_mpesa, false), coalesce(cash_office, false), coalesce(grant_cash_office, false),
+				coalesce(accounts, false), coalesce(aprove_accounts, false), coalesce(complete_stock_take, false),
+				coalesce(create_scard, false), coalesce(grant_create_scard, false), coalesce(create_stock, false), coalesce(link_stock, false), coalesce(price_change, false), coalesce(grant_price_change, false), coalesce(stk_location, 'shop'),
+				till_num, reset,
+				coalesce(cast(token as varchar(20)), 'NULL') token, 	coalesce(token_date, '2006-01-01'),
+				coalesce(adopt_stockcount, false), coalesce(create_users, false), coalesce(ammend_invoice, false), coalesce(grant_ammend_invoice, false),
+				coalesce(audit_stock, false), coalesce(grant_audit_stock, false),
+				coalesce(grant_create_users, false),
+				coalesce(profile, '{}')::text
+			FROM users WHERE username = $1`
+
+	// run query
+	rows, err := database.PgPool.Query(ctx, sql, user.Username)
+	if err != nil {
+		fmt.Println("error fetching user ", err.Error())
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		profileStr := ""
+		// scan rows into user_details
+		rows.Scan(&user.FirstName, &user.LastName,
+			&user.Username, &user.password, &user.Branch, &user.CompanyID, &user.UserClass, &user.PosSettings,
+			&user.PostDispatch, &user.ApproveDispatch, &user.GrantPostDispatch, &user.GrantApproveDispatch,
+			&user.PostReceive, &user.ApproveReceive, &user.GrantPostReceive, &user.GrantApproveReceive,
+			&user.PostOrders, &user.ApproveOrders, &user.GrantPostOrders, &user.GrantApproveOrders,
+			&user.Produce, &user.GrantProduce,
+			&user.MakeSales, &user.ApproveSales, &user.AcceptPayment, &user.GrantMakeSales, &user.GrantApproveSales, &user.GrantAcceptPayment,
+			&user.SalesReturns, &user.ApproveSalesReturns, &user.GrantSalesReturns, &user.GrantApproveSalesReturns,
+			&user.GrantCashRollups, &user.CashRollups, &user.ApproveCashRollups, &user.GrantApproveCashRollups,
+			&user.Laybyes, &user.ApproveCreditSales, &user.GrantLaybyes, &user.GrantApproveCreditSales,
+			&user.Ledger, &user.ReconLedger, &user.AccessSalesReports,
+			&user.ActivateMpesa, &user.GrantActivateMpesa, &user.CashOffice, &user.GrantCashOffice,
+			&user.Accounts, &user.AproveAccounts, &user.CompleteStockTake,
+			&user.CreateScard, &user.GrantCreateScard, &user.CreateStock, &user.LinkStock, &user.PriceChange, &user.GrantPriceChange, &user.StkLocation,
+			&user.TillNum, &user.Reset,
+			&user.Token, &user.TokenDate,
+			&user.AdoptStockcount, &user.CreateUsers, &user.AmmendInvoice, &user.GrantAmmendInvoice,
+			&user.AuditStock, &user.GrantAuditStock,
+			&user.GrantCreateUsers, &profileStr)
+		json.Unmarshal([]byte(profileStr), &user.Profile)
 	}
 
 	return nil
@@ -136,18 +198,21 @@ func FetchUser(ctx context.Context, username string) (Users, error) {
 				coalesce(create_scard, false), coalesce(grant_create_scard, false), coalesce(create_stock, false), coalesce(link_stock, false), coalesce(price_change, false), coalesce(grant_price_change, false), coalesce(stk_location, 'shop'),
 				till_num, reset,
 				coalesce(cast(token as varchar(20)), 'NULL') token, 	coalesce(token_date, '2006-01-01'),
-				coalesce(adopt_stockcount, false), coalesce(create_users, false), coalesce(ammend_invoice, false), coalesce(grant_ammend_invoice, false)
+				coalesce(adopt_stockcount, false), coalesce(create_users, false), coalesce(ammend_invoice, false), coalesce(grant_ammend_invoice, false), coalesce(grant_create_users, false),
+				coalesce(audit_stock, false), coalesce(grant_audit_stock, false),
+				coalesce(profile, '{}')::text
 			FROM users WHERE username = $1`
 
 	// run query
 	rows, err := database.PgPool.Query(ctx, sql, username)
 	if err != nil {
-		fmt.Println("error fetching user ", err.Error())
+		log.Println("postgresql error,    failed to query user ", err)
 		return values, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
+		profileStr := ""
 		// scan rows into user_details
 		rows.Scan(&values.FirstName, &values.LastName,
 			&values.Username, &values.password, &values.Branch, &values.CompanyID, &values.UserClass, &values.PosSettings,
@@ -165,7 +230,10 @@ func FetchUser(ctx context.Context, username string) (Users, error) {
 			&values.CreateScard, &values.GrantCreateScard, &values.CreateStock, &values.LinkStock, &values.PriceChange, &values.GrantPriceChange, &values.StkLocation,
 			&values.TillNum, &values.Reset,
 			&values.Token, &values.TokenDate,
-			&values.AdoptStockcount, &values.CreateUsers, &values.AmmendInvoice, &values.GrantAmmendInvoice)
+			&values.AdoptStockcount, &values.CreateUsers, &values.AmmendInvoice, &values.GrantAmmendInvoice, &values.GrantCreateUsers,
+			&values.AuditStock, &values.GrantAuditStock, &profileStr,
+		)
+		json.Unmarshal([]byte(profileStr), &values.Profile)
 	}
 
 	// return values
@@ -475,6 +543,11 @@ func UpdateUser(rights Users, args map[string]interface{}) error {
 					sql += fmt.Sprintf(", link_stock = %v", val)
 				}
 			}
+			if rights.GrantAuditStock || rights.UserClass == "super user" {
+				if val, ok := args["audit_stock"]; ok {
+					sql += fmt.Sprintf(", audit_stock = %v", val)
+				}
+			}
 
 			// ==================== User Management and Accounts rights ==========================================
 			// update create user if can grant
@@ -495,9 +568,7 @@ func UpdateUser(rights Users, args map[string]interface{}) error {
 				if val, ok := args["post_cheques"]; ok {
 					sql += fmt.Sprintf(", post_cheques = %v", val)
 				}
-				if val, ok := args["adopt_stockcount"]; ok {
-					sql += fmt.Sprintf(", adopt_stockcount = %v", val)
-				}
+
 			}
 
 			// update recon_ledger, aprove_accounts, approve_cheques  if can grant approve accounts
@@ -512,23 +583,32 @@ func UpdateUser(rights Users, args map[string]interface{}) error {
 					sql += fmt.Sprintf(", approve_cheques = %v", val)
 				}
 			}
+
+			if val, ok := args["complete_stock_take"]; ok {
+				sql += fmt.Sprintf(", complete_stock_take = %v", val)
+			}
+			if val, ok := args["adopt_stockcount"]; ok {
+				sql += fmt.Sprintf(", adopt_stockcount = %v", val)
+			}
 		}
 	}
 	fmt.Println("username =", args["username"])
 
-	if val, ok := args["username"]; ok {
-		username := strings.Replace(fmt.Sprintf("%v", val), "'", "||chr(39)||", -1)
-
-		SQL := fmt.Sprintf("UPDATE users SET %v WHERE username = '%v'", sql, username)
-		fmt.Printf("\tsql = %v\n", SQL)
-
-		_, err := database.PgPool.Exec(ctx, SQL)
-		if err != nil {
-			return err
-		}
-	} else {
+	if _, ok := args["username"]; !ok {
 		return fmt.Errorf("username is not provided")
 	}
+
+	username := strings.Replace(fmt.Sprintf("%v", args["username"]), "'", "||chr(39)||", -1)
+
+	SQL := fmt.Sprintf("UPDATE users SET %v WHERE username = '%v'", sql, username)
+	fmt.Printf("\tsql = %v\n\n", SQL)
+
+	_, err := database.PgPool.Exec(ctx, SQL)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(SQL)
 
 	return nil
 }
@@ -539,6 +619,7 @@ func FetchAllActiveUsers(branch string) ([]Users, error) {
 	if branch != "" && branch != "all" {
 		brCon = fmt.Sprintf("WHERE branch = '%v'", strings.Replace(branch, "'", "|| chr(39) ||", -1))
 	}
+	fmt.Println("\t branch con = ", brCon)
 
 	// create a sql fetch_statement
 	sql := fmt.Sprintf(`
@@ -554,10 +635,11 @@ func FetchAllActiveUsers(branch string) ([]Users, error) {
 				laybyes, approve_credit_sales, grant_laybyes, grant_approve_credit_sales,
 				ledger, recon_ledger, access_sales_reports,
 				accounts, aprove_accounts, complete_stock_take,
+				audit_stock, grant_audit_stock,
 				create_scard, create_stock, stk_location, reset,
-       			adopt_stockcount, create_users
+       			adopt_stockcount, create_users, grant_create_users
 			FROM users %v
-			ORDER BY username ASC`, brCon)
+			ORDER BY username ASC`, "")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -586,8 +668,9 @@ func FetchAllActiveUsers(branch string) ([]Users, error) {
 			&values.Laybyes, &values.ApproveCreditSales, &values.GrantLaybyes, &values.GrantApproveCreditSales,
 			&values.Ledger, &values.ReconLedger, &values.AccessSalesReports,
 			&values.Accounts, &values.AproveAccounts, &values.CompleteStockTake,
+			&values.AuditStock, &values.GrantAuditStock,
 			&values.CreateScard, &values.CreateStock, &values.StkLocation, &values.Reset,
-			&values.AdoptStockcount, &values.CreateUsers)
+			&values.AdoptStockcount, &values.CreateUsers, &values.GrantCreateUsers)
 
 		if err != nil {
 			fmt.Println(err)
@@ -641,6 +724,22 @@ func CreateToken(username string, duration int) error {
 	}
 
 	return nil
+}
+
+// UpdateProfile persists a user's profile (appearance etc.) to the database.
+func UpdateProfile(username string, profile Profile) error {
+	b, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	_, err = database.PgPool.Exec(ctx,
+		`UPDATE users SET profile = $1 WHERE username = $2`,
+		string(b), username)
+	return err
 }
 
 // ResetPassword sets new password for specified user
@@ -1140,11 +1239,18 @@ func FetchCashApprover(branch, username string) ([]map[string]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	// prepare sql statement
-	sql := `SELECT username FROM users 
-			WHERE cash_rollups = True AND branch = $1 AND username != 'JTELLER'`
+	branches := []string{branch, "All"}
 
-	rows, err := database.PgPool.Query(ctx, sql, branch)
+	// prepare sql statement
+	sql := `SELECT 
+				username 
+			FROM users 
+			WHERE 
+				cash_rollups = True AND 
+				branch = ANY($1) 
+				AND username != 'JTELLER'`
+
+	rows, err := database.PgPool.Query(ctx, sql, branches)
 	if err != nil {
 		log.Println("error = ", err)
 		return nil, err

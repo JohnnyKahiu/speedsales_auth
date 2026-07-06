@@ -23,9 +23,10 @@ func NewRouter() *mux.Router {
 	// r.HandleFunc("/ws", socketHandler)
 
 	r.HandleFunc("/login", loginRoutes).Methods("POST", "OPTIONS")
+	r.HandleFunc("/login/reset", ResetUserRoutes).Methods("POST", "OPTIONS")
 
 	r.HandleFunc("/users/{module}", UserPOSTRoutes).Methods("POST", "OPTIONS")
-	r.HandleFunc("/login/reset", ResetUserRoutes).Methods("POST", "OPTIONS")
+	r.HandleFunc("/users/{module}", UserGETRoutes).Methods("GET", "OPTIONS")
 
 	// r.HandleFunc("/sms", sms.Post).Methods("POST", "OPTIONS")
 

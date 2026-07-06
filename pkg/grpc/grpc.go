@@ -30,6 +30,7 @@ func (s *AuthServer) ValidateToken(ctx context.Context, req *pb.ValidateTokenReq
 
 	fmt.Println("\n\t details = ", details)
 
+	fmt.Println("\n\t branch =", details.Branch)
 	fmt.Println("\n\n\t accept_payment =", details.AcceptPayment)
 	fmt.Println("\t make_sales =", details.CashRollups)
 	fmt.Println("\t till_num =", details.TillNum)
@@ -58,7 +59,6 @@ func NewServer(address string) error {
 	pb.RegisterUserServiceServer(grpcServer, &UserServer{})
 	pb.RegisterTillServiceServer(grpcServer, &TillServer{})
 
-	log.Println("Login service running on :50051")
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 		return err
