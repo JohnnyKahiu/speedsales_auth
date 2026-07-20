@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/JohnnyKahiu/speedsales_login/pkg/license"
 	"github.com/JohnnyKahiu/speedsales_login/pkg/users"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -66,6 +67,17 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 		return respMap
 	}
 
+	// check license validity for this company
+	licenseExpired := false
+	_, expired, licErr := license.Validate(user.CompanyID)
+	if licErr != nil {
+		log.Println("warning: license check failed    err =", licErr)
+	}
+	if expired {
+		licenseExpired = true
+		stripToBasicRights(&user)
+	}
+
 	// generate jwt token
 	token, _ := user.GenerateJWT(privateKey)
 	if reset {
@@ -73,6 +85,7 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 		respMap["token"] = fmt.Sprintf("%v", token)
 		respMap["username"] = user.Username
 		respMap["message"] = "reset user password"
+		respMap["user_details"] = user
 		return respMap
 	}
 
@@ -83,5 +96,27 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 	respMap["username"] = user.Username
 	respMap["till_num"] = user.TillNum
 	respMap["user_details"] = user
+	respMap["license_expired"] = licenseExpired
 	return respMap
+}
+
+// stripToBasicRights zeroes all permissions on u except make_sales and accept_payment.
+func stripToBasicRights(u *users.Users) {
+	makeSales     := u.MakeSales
+	acceptPayment := u.AcceptPayment
+
+	*u = users.Users{
+		AutoId:        u.AutoId,
+		FirstName:     u.FirstName,
+		LastName:      u.LastName,
+		Username:      u.Username,
+		Branch:        u.Branch,
+		CompanyID:     u.CompanyID,
+		UserClass:     u.UserClass,
+		TillNum:       u.TillNum,
+		StkLocation:   u.StkLocation,
+		Profile:       u.Profile,
+		MakeSales:     makeSales,
+		AcceptPayment: acceptPayment,
+	}
 }

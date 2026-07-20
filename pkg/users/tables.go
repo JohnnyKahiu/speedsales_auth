@@ -1,7 +1,6 @@
 package users
 
 import (
-	"log"
 	"time"
 
 	"github.com/JohnnyKahiu/speedsales_login/pkg/database"
@@ -103,12 +102,13 @@ type Users struct {
 	AmmendInvoice      bool `json:"ammend_invoice" name:"ammend_invoice" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 	GrantAmmendInvoice bool `json:"grant_ammend_invoice" name:"grant_ammend_invoice" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 
-	CreateStock       bool `json:"create_stock" name:"create_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
-	GrantCreateStock  bool `json:"grant_create_stock" name:"grant_create_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
-	LinkStock         bool `json:"link_stock" name:"link_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
-	CompleteStockTake bool `json:"complete_stock_take" name:"complete_stock_take" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
-	AuditStock        bool `json:"audit_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
-	GrantAuditStock   bool `json:"grant_audit_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	CreateStock              bool `json:"create_stock" name:"create_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	GrantCreateStock         bool `json:"grant_create_stock" name:"grant_create_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	LinkStock                bool `json:"link_stock" name:"link_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	CompleteStockTake        bool `json:"complete_stock_take" name:"complete_stock_take" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	AuditStock               bool `json:"audit_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	GrantAuditStock          bool `json:"grant_audit_stock" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
+	GrantCompleteStockcount  bool `json:"grant_complete_stockcount" name:"grant_complete_stockcount" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 
 	Accounts            bool `json:"accounts" name:"accounts" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
 	GrantAccounts       bool `json:"grant_accounts" name:"grant_accounts" type:"field" sql:"BOOL NOT NULL DEFAULT 'FALSE'"`
@@ -146,54 +146,122 @@ func createDefaultUser() error {
 
 	user.Username = "Admin"
 	user.FirstName = "Administrator"
-	user.PosSettings = true
-	user.GrantPostDispatch = true
-	user.GrantApproveDispatch = true
-	user.GrantPostReceive = true
-	user.GrantApproveReceive = true
-	user.GrantPostOrders = true
-	user.GrantApproveOrders = true
-	user.GrantAccessSalesReports = true
-	user.GrantMakeSales = true
-	user.GrantApproveSales = true
-	user.GrantAcceptPayment = true
-	user.GrantCashRollups = true
-	user.GrantApproveCashRollups = true
-	user.GrantCashOffice = true
-	user.GrantSalesReturns = true
-	user.GrantApproveSalesReturns = true
-	user.GrantLaybyes = true
-	user.GrantApproveCreditSales = true
-	user.GrantActivateMpesa = true
-	user.GrantPostCheques = true
-	user.GrantApproveCheques = true
-	user.CreateUsers = true
-	user.GrantCreateUsers = true
-	user.GrantDeleteUsers = true
-	user.GrantPriceChange = true
-	user.GrantAmmendInvoice = true
-	user.CreateStock = true
-	user.GrantCreateStock = true
-	user.GrantAuditStock = true
-	user.LinkStock = true
-	user.PriceChange = true
-	user.GrantPriceChange = true
-	user.CompleteStockTake = true
-	user.GrantAccounts = true
-	user.GrantAproveAccounts = true
-	user.GrantLedger = true
-	user.GrantReconLedger = true
-	user.GrantCreateScard = true
-	user.GrantProduce = true
 	user.Reset = true
 	user.Passcode = "123"
 
-	err := user.CreateUser("123")
+	// operational
+	user.RemoteLogin = true
+	user.AdoptStockcount = true
+	user.CompleteStockcount = true
+	user.PosSettings = true
+
+	// dispatch
+	user.PostDispatch = true
+	user.ApproveDispatch = true
+	user.GrantPostDispatch = true
+	user.GrantApproveDispatch = true
+
+	// receiving
+	user.PostReceive = true
+	user.ApproveReceive = true
+	user.GrantPostReceive = true
+	user.GrantApproveReceive = true
+
+	// orders
+	user.PostOrders = true
+	user.ApproveOrders = true
+	user.GrantPostOrders = true
+	user.GrantApproveOrders = true
+
+	// reports
+	user.AccessSalesReports = true
+	user.GrantAccessSalesReports = true
+
+	// sales
+	user.MakeSales = true
+	user.ApproveSales = true
+	user.AcceptPayment = true
+	user.GrantMakeSales = true
+	user.GrantApproveSales = true
+	user.GrantAcceptPayment = true
+
+	// cash
+	user.CashOffice = true
+	user.CashRollups = true
+	user.ApproveCashRollups = true
+	user.GrantCashOffice = true
+	user.GrantCashRollups = true
+	user.GrantApproveCashRollups = true
+
+	// returns
+	user.SalesReturns = true
+	user.ApproveSalesReturns = true
+	user.GrantSalesReturns = true
+	user.GrantApproveSalesReturns = true
+
+	// laybyes / credit
+	user.Laybyes = true
+	user.ApproveCreditSales = true
+	user.GrantLaybyes = true
+	user.GrantApproveCreditSales = true
+
+	// mpesa
+	user.ActivateMpesa = true
+	user.GrantActivateMpesa = true
+
+	// cheques
+	user.PostCheques = true
+	user.ApproveCheques = true
+	user.GrantPostCheques = true
+	user.GrantApproveCheques = true
+
+	// users
+	user.CreateUsers = true
+	user.DeleteUsers = true
+	user.GrantCreateUsers = true
+	user.GrantDeleteUsers = true
+
+	// invoices / pricing
+	user.PriceChange = true
+	user.AmmendInvoice = true
+	user.GrantPriceChange = true
+	user.GrantAmmendInvoice = true
+
+	// stock
+	user.CreateStock = true
+	user.LinkStock = true
+	user.AuditStock = true
+	user.CompleteStockTake = true
+	user.GrantCreateStock = true
+	user.GrantAuditStock = true
+
+	// accounts
+	user.Accounts = true
+	user.AproveAccounts = true
+	user.GrantAccounts = true
+	user.GrantAproveAccounts = true
+
+	// ledger
+	user.Ledger = true
+	user.ReconLedger = true
+	user.GrantLedger = true
+	user.GrantReconLedger = true
+
+	// smart card
+	user.CreateScard = true
+	user.GrantCreateScard = true
+
+	// production
+	user.Produce = true
+	user.GrantProduce = true
+
+	config := &PasswordConfig{Time: 1, Memory: 64 * 1024, Threads: 4, KeyLen: 32}
+	hashedPwd, err := GeneratePassword(config, "123")
 	if err != nil {
 		return err
 	}
-
-	return nil
+	user.Reset = false
+	return user.CreateUser(hashedPwd)
 }
 
 func genUserTable() error {
@@ -201,14 +269,5 @@ func genUserTable() error {
 }
 
 func GenUsersTables() error {
-	err := genUserTable()
-	if err != nil {
-		log.Println("error, failed to generate User Tables    err =", err)
-	}
-
-	err = createDefaultUser()
-	if err != nil {
-		log.Println("error, failed to create default user    err =", err)
-	}
-	return err
+	return Migrate()
 }

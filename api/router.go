@@ -28,6 +28,9 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/users/{module}", UserPOSTRoutes).Methods("POST", "OPTIONS")
 	r.HandleFunc("/users/{module}", UserGETRoutes).Methods("GET", "OPTIONS")
 
+	r.HandleFunc("/license", LicensePOST).Methods("POST", "OPTIONS")
+	r.HandleFunc("/license", LicenseGET).Methods("GET", "OPTIONS")
+
 	// r.HandleFunc("/sms", sms.Post).Methods("POST", "OPTIONS")
 
 	return r

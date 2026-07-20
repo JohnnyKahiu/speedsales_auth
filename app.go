@@ -14,6 +14,7 @@ import (
 	"github.com/JohnnyKahiu/speedsales_login/api"
 	"github.com/JohnnyKahiu/speedsales_login/pkg/database"
 	"github.com/JohnnyKahiu/speedsales_login/pkg/grpc"
+	"github.com/JohnnyKahiu/speedsales_login/pkg/license"
 	"github.com/JohnnyKahiu/speedsales_login/pkg/users"
 	"github.com/JohnnyKahiu/speedsales_login/pkg/variables"
 	"github.com/joho/godotenv"
@@ -81,7 +82,10 @@ func (arg *ConfigFile) readConfFile() error {
 }
 
 func initTables() error {
-	return users.GenUsersTables()
+	if err := users.GenUsersTables(); err != nil {
+		return err
+	}
+	return license.GenTable()
 }
 
 func main() {

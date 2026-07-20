@@ -62,31 +62,33 @@ func (args *Users) CreateUser(password string) error {
 
 	args.Reset = true
 
-	sql := `INSERT INTO users(first_name, last_name, telephone, email, username, branch, company_id, user_class, pos_settings, 
-				post_dispatch, approve_dispatch, grant_post_dispatch, grant_approve_dispatch, 
+	sql := `INSERT INTO users(first_name, last_name, telephone, email, username, branch, company_id, user_class, pos_settings,
+				post_dispatch, approve_dispatch, grant_post_dispatch, grant_approve_dispatch,
 				post_receive, approve_receive, grant_post_receive, grant_approve_receive,
 				post_orders, approve_orders , grant_post_orders, grant_approve_orders,
 				make_sales, approve_sales, grant_make_Sales, grant_approve_sales,
+				accept_payment, grant_accept_payment,
 				sales_returns,  approve_sales_returns, grant_sales_returns, grant_approve_sales_returns,
 				grant_cash_rollups, cash_rollups, approve_cash_rollups, grant_approve_cash_rollups,
 				laybyes, approve_credit_sales, grant_laybyes, grant_approve_credit_sales,
-				ledger, recon_ledger, create_scard, 
-				accounts, grant_accounts, aprove_accounts, grant_aprove_accounts, 
+				ledger, recon_ledger, create_scard,
+				accounts, grant_accounts, aprove_accounts, grant_aprove_accounts,
 				create_users, delete_users, create_stock, audit_stock, grant_audit_stock,
-				access_sales_reports, stk_location, reset, password, grant_create_users
-			VALUES($1, $2, $3, $4, $5, $6, $7, 
-					$8, $9, $10, $11, 
-					$12, $13, $14, $15, 
-					$16, $17, $18, $19, 
-					$20, $21, $22, $23, 
-					$24, $25, $26, $27, 
-					$28, $29, $30, $31, 
-					$32, $33, $34, $35, 
-					$36, $37, $38, 
-					$39, $40, $41, 
-					$42, $43, $44, 
-					$45, $46, $47, 
-					$48, $49, $50, $51, $52, $53, $54 )`
+				access_sales_reports, stk_location, reset, password, grant_create_users)
+			VALUES($1, $2, $3, $4, $5, $6, $7,
+					$8, $9, $10, $11,
+					$12, $13, $14, $15,
+					$16, $17, $18, $19,
+					$20, $21, $22, $23,
+					$24, $25, $26, $27,
+					$28, $29, $30, $31,
+					$32, $33, $34, $35,
+					$36, $37, $38, $39,
+					$40, $41, $42,
+					$43, $44, $45,
+					$46, $47, $48,
+					$49, $50, $51,
+					$52, $53, $54, $55, $56 )`
 
 	// fmt.Println(sql)
 	_, err := database.PgPool.Exec(ctx, sql, args.FirstName, args.LastName, args.Telephone, args.Email, args.Username, args.Branch, args.CompanyID, args.UserClass, args.PosSettings,
@@ -94,6 +96,7 @@ func (args *Users) CreateUser(password string) error {
 		args.PostReceive, args.ApproveReceive, args.GrantPostReceive, args.GrantApproveReceive,
 		args.PostOrders, args.ApproveOrders, args.GrantPostOrders, args.GrantApproveOrders,
 		args.MakeSales, args.ApproveSales, args.GrantMakeSales, args.GrantApproveSales,
+		args.AcceptPayment, args.GrantAcceptPayment,
 		args.SalesReturns, args.ApproveSalesReturns, args.GrantSalesReturns, args.GrantApproveSalesReturns,
 		args.CashRollups, args.GrantCashRollups, args.ApproveCashRollups, args.GrantApproveCashRollups,
 		args.Laybyes, args.ApproveCreditSales, args.GrantLaybyes, args.GrantApproveCreditSales,
@@ -103,6 +106,7 @@ func (args *Users) CreateUser(password string) error {
 		args.AccessSalesReports, args.StkLocation, args.Reset, password, args.GrantCreateUsers)
 
 	if err != nil {
+		fmt.Println(sql)
 		log.Println("\n Error creating user ", err)
 		return err
 	}
@@ -127,12 +131,13 @@ func (user *Users) Fetch() error {
 				coalesce(ledger, false), coalesce(recon_ledger, false), coalesce(access_sales_reports, false),
 				coalesce(activate_mpesa, false), coalesce(grant_activate_mpesa, false), coalesce(cash_office, false), coalesce(grant_cash_office, false),
 				coalesce(accounts, false), coalesce(aprove_accounts, false), coalesce(complete_stock_take, false),
-				coalesce(create_scard, false), coalesce(grant_create_scard, false), coalesce(create_stock, false), coalesce(link_stock, false), coalesce(price_change, false), coalesce(grant_price_change, false), coalesce(stk_location, 'shop'),
+				coalesce(create_scard, false), coalesce(grant_create_scard, false), coalesce(create_stock, false), coalesce(grant_create_stock, false), coalesce(link_stock, false), coalesce(price_change, false), coalesce(grant_price_change, false), coalesce(stk_location, 'shop'),
 				till_num, reset,
 				coalesce(cast(token as varchar(20)), 'NULL') token, 	coalesce(token_date, '2006-01-01'),
 				coalesce(adopt_stockcount, false), coalesce(create_users, false), coalesce(ammend_invoice, false), coalesce(grant_ammend_invoice, false),
 				coalesce(audit_stock, false), coalesce(grant_audit_stock, false),
 				coalesce(grant_create_users, false),
+				coalesce(complete_stockcount, false), coalesce(grant_complete_stockcount, false),
 				coalesce(profile, '{}')::text
 			FROM users WHERE username = $1`
 
@@ -160,12 +165,14 @@ func (user *Users) Fetch() error {
 			&user.Ledger, &user.ReconLedger, &user.AccessSalesReports,
 			&user.ActivateMpesa, &user.GrantActivateMpesa, &user.CashOffice, &user.GrantCashOffice,
 			&user.Accounts, &user.AproveAccounts, &user.CompleteStockTake,
-			&user.CreateScard, &user.GrantCreateScard, &user.CreateStock, &user.LinkStock, &user.PriceChange, &user.GrantPriceChange, &user.StkLocation,
+			&user.CreateScard, &user.GrantCreateScard, &user.CreateStock, &user.GrantCreateStock, &user.LinkStock, &user.PriceChange, &user.GrantPriceChange, &user.StkLocation,
 			&user.TillNum, &user.Reset,
 			&user.Token, &user.TokenDate,
 			&user.AdoptStockcount, &user.CreateUsers, &user.AmmendInvoice, &user.GrantAmmendInvoice,
 			&user.AuditStock, &user.GrantAuditStock,
-			&user.GrantCreateUsers, &profileStr)
+			&user.GrantCreateUsers,
+			&user.CompleteStockcount, &user.GrantCompleteStockcount,
+			&profileStr)
 		json.Unmarshal([]byte(profileStr), &user.Profile)
 	}
 
@@ -195,11 +202,12 @@ func FetchUser(ctx context.Context, username string) (Users, error) {
 				coalesce(ledger, false), coalesce(recon_ledger, false), coalesce(access_sales_reports, false),
 				coalesce(activate_mpesa, false), coalesce(grant_activate_mpesa, false), coalesce(cash_office, false), coalesce(grant_cash_office, false),
 				coalesce(accounts, false), coalesce(aprove_accounts, false), coalesce(complete_stock_take, false),
-				coalesce(create_scard, false), coalesce(grant_create_scard, false), coalesce(create_stock, false), coalesce(link_stock, false), coalesce(price_change, false), coalesce(grant_price_change, false), coalesce(stk_location, 'shop'),
+				coalesce(create_scard, false), coalesce(grant_create_scard, false), coalesce(create_stock, false), coalesce(grant_create_stock, false), coalesce(link_stock, false), coalesce(price_change, false), coalesce(grant_price_change, false), coalesce(stk_location, 'shop'),
 				till_num, reset,
 				coalesce(cast(token as varchar(20)), 'NULL') token, 	coalesce(token_date, '2006-01-01'),
 				coalesce(adopt_stockcount, false), coalesce(create_users, false), coalesce(ammend_invoice, false), coalesce(grant_ammend_invoice, false), coalesce(grant_create_users, false),
 				coalesce(audit_stock, false), coalesce(grant_audit_stock, false),
+				coalesce(complete_stockcount, false), coalesce(grant_complete_stockcount, false),
 				coalesce(profile, '{}')::text
 			FROM users WHERE username = $1`
 
@@ -227,11 +235,13 @@ func FetchUser(ctx context.Context, username string) (Users, error) {
 			&values.Ledger, &values.ReconLedger, &values.AccessSalesReports,
 			&values.ActivateMpesa, &values.GrantActivateMpesa, &values.CashOffice, &values.GrantCashOffice,
 			&values.Accounts, &values.AproveAccounts, &values.CompleteStockTake,
-			&values.CreateScard, &values.GrantCreateScard, &values.CreateStock, &values.LinkStock, &values.PriceChange, &values.GrantPriceChange, &values.StkLocation,
+			&values.CreateScard, &values.GrantCreateScard, &values.CreateStock, &values.GrantCreateStock, &values.LinkStock, &values.PriceChange, &values.GrantPriceChange, &values.StkLocation,
 			&values.TillNum, &values.Reset,
 			&values.Token, &values.TokenDate,
 			&values.AdoptStockcount, &values.CreateUsers, &values.AmmendInvoice, &values.GrantAmmendInvoice, &values.GrantCreateUsers,
-			&values.AuditStock, &values.GrantAuditStock, &profileStr,
+			&values.AuditStock, &values.GrantAuditStock,
+			&values.CompleteStockcount, &values.GrantCompleteStockcount,
+			&profileStr,
 		)
 		json.Unmarshal([]byte(profileStr), &values.Profile)
 	}
@@ -299,6 +309,9 @@ func UpdateUser(rights Users, args map[string]interface{}) error {
 			if val, ok := args["stk_location"]; ok {
 				sql += fmt.Sprintf(", stk_location = '%v'", strings.Replace(fmt.Sprintf("%v", val), "'", "|| chr(39) ||", -1))
 			}
+			if val, ok := args["reset"]; ok {
+				sql += fmt.Sprintf(", reset = %v", val)
+			}
 
 			// ==================== Sales rights ==========================================
 			// update make sales if can grant
@@ -328,7 +341,7 @@ func UpdateUser(rights Users, args map[string]interface{}) error {
 			// update approve sales if can grant
 			if rights.GrantApproveSales || rights.UserClass == "super user" {
 				if val, ok := args["approve_sales"]; ok {
-					sql += fmt.Sprintf(", make_sales = %v", val)
+					sql += fmt.Sprintf(", approve_sales = %v", val)
 				}
 			}
 			if rights.UserClass == "super user" {
@@ -527,20 +540,22 @@ func UpdateUser(rights Users, args map[string]interface{}) error {
 			}
 
 			// ==================== Stock rights ==========================================
-			// update price change if can grant
-			if rights.GrantPriceChange || rights.UserClass == "super user" {
-				if val, ok := args["price_change"]; ok {
-					sql += fmt.Sprintf(", price_change = %v", val)
-				}
-			}
-
-			// update create stock, link stock if can grant create stock
+			// update create stock, link stock, price change, stockcount perms if can grant create stock
 			if rights.GrantCreateStock || rights.UserClass == "super user" {
 				if val, ok := args["create_stock"]; ok {
 					sql += fmt.Sprintf(", create_stock = %v", val)
 				}
 				if val, ok := args["link_stock"]; ok {
 					sql += fmt.Sprintf(", link_stock = %v", val)
+				}
+				if val, ok := args["price_change"]; ok {
+					sql += fmt.Sprintf(", price_change = %v", val)
+				}
+				if val, ok := args["adopt_stockcount"]; ok {
+					sql += fmt.Sprintf(", adopt_stockcount = %v", val)
+				}
+				if val, ok := args["complete_stockcount"]; ok {
+					sql += fmt.Sprintf(", complete_stockcount = %v", val)
 				}
 			}
 			if rights.GrantAuditStock || rights.UserClass == "super user" {
@@ -587,9 +602,6 @@ func UpdateUser(rights Users, args map[string]interface{}) error {
 			if val, ok := args["complete_stock_take"]; ok {
 				sql += fmt.Sprintf(", complete_stock_take = %v", val)
 			}
-			if val, ok := args["adopt_stockcount"]; ok {
-				sql += fmt.Sprintf(", adopt_stockcount = %v", val)
-			}
 		}
 	}
 	fmt.Println("username =", args["username"])
@@ -623,21 +635,30 @@ func FetchAllActiveUsers(branch string) ([]Users, error) {
 
 	// create a sql fetch_statement
 	sql := fmt.Sprintf(`
-			SELECT first_name, last_name, 
-				username, branch, coalesce(company_id, 0), coalesce(user_class, 'user'), pos_settings, 
-				post_dispatch, approve_dispatch, grant_post_dispatch, grant_approve_dispatch, 
-				post_receive, approve_receive, grant_post_receive, grant_approve_receive,
-				post_orders, approve_orders , grant_post_orders, grant_approve_orders,
-				produce, grant_produce,
-				make_sales, approve_sales, grant_make_Sales, grant_approve_sales,
-				sales_returns,  approve_sales_returns, grant_sales_returns, grant_approve_sales_returns,
-				grant_cash_rollups, cash_rollups, approve_cash_rollups, grant_approve_cash_rollups,
-				laybyes, approve_credit_sales, grant_laybyes, grant_approve_credit_sales,
-				ledger, recon_ledger, access_sales_reports,
-				accounts, aprove_accounts, complete_stock_take,
-				audit_stock, grant_audit_stock,
-				create_scard, create_stock, stk_location, reset,
-       			adopt_stockcount, create_users, grant_create_users
+			SELECT first_name, last_name,
+				username, branch, coalesce(company_id, 0), coalesce(user_class, 'user'), pos_settings,
+				coalesce(post_dispatch, false), coalesce(approve_dispatch, false), coalesce(grant_post_dispatch, false), coalesce(grant_approve_dispatch, false),
+				coalesce(post_receive, false), coalesce(approve_receive, false), coalesce(grant_post_receive, false), coalesce(grant_approve_receive, false),
+				coalesce(post_orders, false), coalesce(approve_orders, false), coalesce(grant_post_orders, false), coalesce(grant_approve_orders, false),
+				coalesce(produce, false), coalesce(grant_produce, false),
+				coalesce(make_sales, false), coalesce(approve_sales, false), coalesce(accept_payment, false), coalesce(grant_make_sales, false), coalesce(grant_approve_sales, false), coalesce(grant_accept_payment, false),
+				coalesce(sales_returns, false), coalesce(approve_sales_returns, false), coalesce(grant_sales_returns, false), coalesce(grant_approve_sales_returns, false),
+				coalesce(grant_cash_rollups, false), coalesce(cash_rollups, false), coalesce(approve_cash_rollups, false), coalesce(grant_approve_cash_rollups, false),
+				coalesce(laybyes, false), coalesce(approve_credit_sales, false), coalesce(grant_laybyes, false), coalesce(grant_approve_credit_sales, false),
+				coalesce(ledger, false), coalesce(recon_ledger, false), coalesce(access_sales_reports, false), coalesce(grant_access_sales_reports, false),
+				coalesce(activate_mpesa, false), coalesce(grant_activate_mpesa, false),
+				coalesce(cash_office, false), coalesce(grant_cash_office, false),
+				coalesce(accounts, false), coalesce(aprove_accounts, false), coalesce(complete_stock_take, false),
+				coalesce(audit_stock, false), coalesce(grant_audit_stock, false),
+				coalesce(create_scard, false), coalesce(grant_create_scard, false),
+				coalesce(create_stock, false), coalesce(grant_create_stock, false),
+				coalesce(link_stock, false),
+				coalesce(price_change, false), coalesce(grant_price_change, false),
+				coalesce(ammend_invoice, false), coalesce(grant_ammend_invoice, false),
+				coalesce(complete_stockcount, false), coalesce(grant_complete_stockcount, false),
+				coalesce(adopt_stockcount, false),
+				coalesce(create_users, false), coalesce(grant_create_users, false),
+				coalesce(stk_location, 'shop'), coalesce(reset, false)
 			FROM users %v
 			ORDER BY username ASC`, "")
 
@@ -662,15 +683,24 @@ func FetchAllActiveUsers(branch string) ([]Users, error) {
 			&values.PostReceive, &values.ApproveReceive, &values.GrantPostReceive, &values.GrantApproveReceive,
 			&values.PostOrders, &values.ApproveOrders, &values.GrantPostOrders, &values.GrantApproveOrders,
 			&values.Produce, &values.GrantProduce,
-			&values.MakeSales, &values.ApproveSales, &values.GrantMakeSales, &values.GrantApproveSales,
+			&values.MakeSales, &values.ApproveSales, &values.AcceptPayment, &values.GrantMakeSales, &values.GrantApproveSales, &values.GrantAcceptPayment,
 			&values.SalesReturns, &values.ApproveSalesReturns, &values.GrantSalesReturns, &values.GrantApproveSalesReturns,
 			&values.GrantCashRollups, &values.CashRollups, &values.ApproveCashRollups, &values.GrantApproveCashRollups,
 			&values.Laybyes, &values.ApproveCreditSales, &values.GrantLaybyes, &values.GrantApproveCreditSales,
-			&values.Ledger, &values.ReconLedger, &values.AccessSalesReports,
+			&values.Ledger, &values.ReconLedger, &values.AccessSalesReports, &values.GrantAccessSalesReports,
+			&values.ActivateMpesa, &values.GrantActivateMpesa,
+			&values.CashOffice, &values.GrantCashOffice,
 			&values.Accounts, &values.AproveAccounts, &values.CompleteStockTake,
 			&values.AuditStock, &values.GrantAuditStock,
-			&values.CreateScard, &values.CreateStock, &values.StkLocation, &values.Reset,
-			&values.AdoptStockcount, &values.CreateUsers, &values.GrantCreateUsers)
+			&values.CreateScard, &values.GrantCreateScard,
+			&values.CreateStock, &values.GrantCreateStock,
+			&values.LinkStock,
+			&values.PriceChange, &values.GrantPriceChange,
+			&values.AmmendInvoice, &values.GrantAmmendInvoice,
+			&values.CompleteStockcount, &values.GrantCompleteStockcount,
+			&values.AdoptStockcount,
+			&values.CreateUsers, &values.GrantCreateUsers,
+			&values.StkLocation, &values.Reset)
 
 		if err != nil {
 			fmt.Println(err)

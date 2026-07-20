@@ -66,6 +66,7 @@ func CreateFromStruct(tblStruct any) error {
 
 	sqlHead = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %v ( ", tblName)
 	sql := sqlHead + sqlBody + ");"
+	fmt.Println("sql =", sql)
 
 	// run sql transaction
 	_, err := PgPool.Exec(ctx, sql)

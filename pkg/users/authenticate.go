@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JohnnyKahiu/speedsales_login/pkg/database"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/argon2"
 )
@@ -199,6 +200,14 @@ func ValidateToken(ctx context.Context, token string) (Users, bool) {
 	authentic := usr.ValidateJWT(token, publicKey)
 	if !authentic {
 		return Users{}, false
+	}
+
+	// JWT till_num is frozen at login time; fetch the live value from DB so
+	// that till opens (which call UpdateTill) are reflected immediately.
+	var liveTillNum int64
+	row := database.PgPool.QueryRow(ctx, `SELECT coalesce(till_num, 0) FROM users WHERE username = $1`, usr.Username)
+	if err := row.Scan(&liveTillNum); err == nil {
+		usr.TillNum = liveTillNum
 	}
 
 	return usr, true
