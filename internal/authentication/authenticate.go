@@ -45,6 +45,12 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 		return respMap
 	}
 
+	// A reset-required account authenticates without proving its real password,
+	// so it must not carry any rights until it's gone through /login/reset.
+	if reset {
+		stripAllRights(&user)
+	}
+
 	fmt.Println("username =", user.FirstName, " last_name =", user.LastName)
 	fmt.Println("accept_payment =", user.AcceptPayment)
 	fmt.Println("make_sales =", user.MakeSales)
@@ -100,9 +106,25 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 	return respMap
 }
 
+// stripAllRights reduces u to bare identity — no permissions at all. Used for
+// reset-required logins, which haven't proven the account's real password yet.
+func stripAllRights(u *users.Users) {
+	*u = users.Users{
+		AutoId:    u.AutoId,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Username:  u.Username,
+		Branch:    u.Branch,
+		CompanyID: u.CompanyID,
+		UserClass: u.UserClass,
+		Profile:   u.Profile,
+		Reset:     u.Reset,
+	}
+}
+
 // stripToBasicRights zeroes all permissions on u except make_sales and accept_payment.
 func stripToBasicRights(u *users.Users) {
-	makeSales     := u.MakeSales
+	makeSales := u.MakeSales
 	acceptPayment := u.AcceptPayment
 
 	*u = users.Users{

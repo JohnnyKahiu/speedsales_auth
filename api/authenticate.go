@@ -14,10 +14,11 @@ func loginRoutes(w http.ResponseWriter, r *http.Request) {
 	jstr, _ := json.Marshal(respMap)
 
 	EnableCors(&w)
-	w.WriteHeader(http.StatusOK)
+
+	status := http.StatusOK
 	if respMap["message"] == "wrong username or password" {
-		w.WriteHeader(http.StatusUnauthorized)
+		status = http.StatusUnauthorized
 	}
+	w.WriteHeader(status)
 	w.Write(jstr)
 }
-	

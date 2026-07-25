@@ -219,10 +219,12 @@ func FetchUser(ctx context.Context, username string) (Users, error) {
 	}
 	defer rows.Close()
 
+	found := false
 	for rows.Next() {
+		found = true
 		profileStr := ""
 		// scan rows into user_details
-		rows.Scan(&values.FirstName, &values.LastName,
+		err := rows.Scan(&values.FirstName, &values.LastName,
 			&values.Username, &values.password, &values.Branch, &values.CompanyID, &values.UserClass, &values.PosSettings,
 			&values.PostDispatch, &values.ApproveDispatch, &values.GrantPostDispatch, &values.GrantApproveDispatch,
 			&values.PostReceive, &values.ApproveReceive, &values.GrantPostReceive, &values.GrantApproveReceive,
@@ -243,7 +245,15 @@ func FetchUser(ctx context.Context, username string) (Users, error) {
 			&values.CompleteStockcount, &values.GrantCompleteStockcount,
 			&profileStr,
 		)
+		if err != nil {
+			log.Println("postgresql error,    failed to scan user row for", username, "   err =", err)
+			return values, err
+		}
 		json.Unmarshal([]byte(profileStr), &values.Profile)
+	}
+
+	if !found {
+		log.Println("FetchUser: no row found for username", username)
 	}
 
 	// return values

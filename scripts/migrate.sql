@@ -163,6 +163,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS produce               BOOL NOT NULL D
 ALTER TABLE users ADD COLUMN IF NOT EXISTS grant_produce         BOOL NOT NULL DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS profile               JSONB NOT NULL DEFAULT '{}';
 
+-- ── Multi-tenancy ───────────────────────────────────────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+CREATE INDEX IF NOT EXISTS idx_users_tenant_id ON users (tenant_id);
+
 -- ── Default Admin user (insert if username does not exist) ──
 INSERT INTO users (
     username,   first_name,     user_class, password,  reset,
