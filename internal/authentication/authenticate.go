@@ -1,9 +1,7 @@
 package authentication
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -13,33 +11,34 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// contextKey is an unexported type so keys set here can never collide with a
+// context value set by another package using a plain string key.
+type contextKey string
+
+// ParamsContextKey is where RateLimiterMiddleware stashes the already-
+// parsed /login request body — the middleware has to fully drain r.Body to
+// read the username for rate-limiting before POST ever sees the request, so
+// this is the handoff contract between the two.
+const ParamsContextKey contextKey = "params"
+
 func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 	respMap := make(map[string]interface{})
 
 	// get post body items
-	b, err := io.ReadAll(r.Body)
-	if err != nil {
+	args, ok := r.Context().Value(ParamsContextKey).(map[string]string)
+	if !ok {
 		respMap["response"] = "error"
-		respMap["message"] = "could not get request params"
+		respMap["message"] = "params error"
 		return respMap
 	}
 
 	// Unmarshal into an args map
-	var args map[string]string
-	err = json.Unmarshal(b, &args)
-	if err != nil {
-		respMap["response"] = "error"
-		respMap["message"] = "failed to parse request params"
-		return respMap
-	}
-	fmt.Println("username =", args["username"])
 
 	user := users.Users{Username: args["username"]}
 
 	// compare argon2 harshed password
 	match, reset, err := user.ComparePassword(args["password"])
 	if !match || err != nil {
-		log.Println("error. failed to compare password    err =", err)
 		respMap["response"] = "error" // return success if no error and match
 		respMap["message"] = "wrong username or password"
 		return respMap
@@ -94,8 +93,6 @@ func POST(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 		respMap["user_details"] = user
 		return respMap
 	}
-
-	fmt.Println("generated token =", token)
 
 	respMap["response"] = "success"
 	respMap["token"] = fmt.Sprintf("%v", token)
